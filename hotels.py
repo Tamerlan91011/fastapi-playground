@@ -19,8 +19,8 @@ hotels = [
 def get_hotels(
         id: int | None = Query(None, description="Айдишник"),
         title: str | None = Query(None, description="Название отеля"),
-        page: int | None = Query(1, description="Какую страницу вывести"),
-        per_page: int | None = Query(3, description="Сколько элементов за страницу вывести"),
+        page: int | None = Query(1, gt=1, description="Какую страницу вывести"),
+        per_page: int | None = Query(3, gt=1, lt=7, description="Сколько элементов за страницу вывести"),
 ):
     hotels_ = []
     
