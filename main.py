@@ -1,82 +1,23 @@
-from fastapi import FastAPI, Query, Body
+from fastapi import FastAPI
+from fastapi.openapi.docs import get_swagger_ui_html
 import uvicorn
 
-app = FastAPI()
+from hotels import router as router_hotels
 
-database = [
-    {'id': 1, 'city': 'Sochi',      'name': 'Vacation Plaza', },
-    {'id': 2, 'city': 'Moscow',     'name': 'Moscow City', },
-    {'id': 3, 'city': 'Ufa',        'name': 'UncleChudra', },
-    {'id': 4, 'city': 'Volgograd',  'name': 'VolgogradCity', },
-    {'id': 5, 'city': 'Volgograd',  'name': 'Start', },
-]
+app = FastAPI(docs_url=None)
 
-@app.get("/hotels")
-def get_hotel(
-        id: int | None = Query(default=None, description="ID города"),
-        city: str | None = Query(default=None, description="Название города")
-):
-    hotel = [hotel for hotel in database if id == hotel['id'] or city == hotel['city']]
-    return hotel
+app.include_router(router_hotels)
 
-@app.delete("/hotels/{hotels_id}")
-def delete_hotel(hotels_id: int):
-    global database
-    database = [hotel for hotel in database if hotels_id != hotel['id']]
-    return {'Status': 'OK'}
 
-@app.put("/hotels/{hotels_id}")
-def fully_update_hotel(
-        hotel_id: int,
-        city: str = Query(description='Название города'),
-        name: str = Query(description='Название отеля')
-):
-    global database
-    
-    if hotel_id in [hotel["id"] for hotel in database]:
-        database[-1].update({"id": hotel_id, "city": city, "name": name})
-        return {"Status": "OK"}
-        
-    return {"Status": "NOT NOK"}
-
-@app.patch("/hotels/{hotels_id}")
-def partly_update_hotel(
-        hotel_id: int,
-        city: str | None = Query(description='Название города'),
-        name: str | None = Query(description='Название отеля')
-):
-    global database
-    
-    if hotel_id in [hotel["id"] for hotel in database]:
-        edited_hotel = database[hotel_id]
-        edited_hotel['city'] = edited_hotel['city'] if city is None else city
-        edited_hotel['name'] = edited_hotel['name'] if city is None else name
-                
-        database[-1].update(edited_hotel)
-        
-        return {"Status": "OK"}
-        
-    return {"Status": "NOT NOK"}
-
-@app.post('/hotels')
-def create_hotel(
-        city: str = Body(embed=True, description="Название города"),
-        name: str = Body(embed=True, description="Название отеля")
-):
-    global database
-    last_hotel = database[-1]
-    
-    last_id = int(last_hotel['id'])
-    
-    new_hotel = {
-        'id': int(last_id + 1),
-        'city': city,
-        "name": name
-    }
-    
-    database.append(new_hotel)
-    
-    return {"Status": "OK"}
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js",
+        swagger_css_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css",
+    )
 
 
 if __name__ == "__main__":
